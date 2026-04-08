@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiminoyawa Gallery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        nav {
+            position: fixed;     /* stays at the top even when you scroll */
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;        /* sits on top of everything else */
+            display: flex;
+            justify-content: space-between; /* logo left, links right */
+            align-items: center;
+            padding: 20px 48px;
+            background-color: rgb(19, 19, 19); /* slightly transparent cream */
+            border-bottom: 1px solid rgba(26, 20, 16, 0.1);
+            }
+
+            /* The gallery name / logo */
+            .nav-logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--color-dark);
+            text-decoration: none; /* remove underline */
+            }
+
+            /* The list of nav links */
+            .nav-links {
+                font-family: 'Cormorant Garamond', serif;
+                list-style: none; /* remove bullet points */
+                display: flex;
+                gap: 32px;        /* space between each link */
+            }
+
+            .nav-links a {
+            font-size: 0.82rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--color-grey);
+            text-decoration: none;
+            transition: color 0.2s; /* smooth colour change on hover */
+            }
+
+            .nav-links a:hover {
+            color: var(--color-dark); /* darken on hover */
+            }
+        :root {
+            --primary: #1a1a1a;
+            --accent: #c9a962;
+            --light: #f5f5f0;
+            --dark: #0d0d0d;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark);
+            color: var(--light);
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="%23c9a962" stroke-width="0.5" opacity="0.1"/></svg>');
+            background-size: 300px;
+            opacity: 0.3;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        .logo-container {
+            text-align: center;
+            z-index: 10;
+            margin-bottom: 3rem;
+        }
+
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 300;
+            letter-spacing: 0.3em;
+            color: var(--light);
+            position: relative;
+            display: inline-block;
+        }
+
+        .logo::after {
+            content: '君の夜和';
+            position: absolute;
+            top: -1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            letter-spacing: 0.5em;
+            color: var(--accent);
+            opacity: 0.8;
+        }
+
+        .tagline {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            font-weight: 300;
+            letter-spacing: 0.2em;
+            color: var(--accent);
+            margin-top: 1rem;
+            opacity: 0;
+            animation: fadeInUp 1s ease forwards 0.5s;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+        }
+
+        /* Carousel Container */
+        .carousel-wrapper {
+            width: 90%;
+            max-width: 1200px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .carousel {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+            min-height: 400px;
+            overflow: hidden;
+            border-radius: 4px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+        }
+
+        .carousel-slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: scale(1.1);
+        }
+
+        .carousel-slide.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.9) contrast(1.1);
+        }
+
+        .slide-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 3rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.6s ease 0.3s;
+        }
+
+        .carousel-slide.active .slide-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .slide-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+        }
+
+        .slide-desc {
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            opacity: 0.8;
+            font-weight: 300;
+        }
+
+        /* Navigation */
+        .carousel-nav {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 20;
+        }
+
+        .nav-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            color: var(--light);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .nav-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Indicators */
+        .indicators {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            display: flex;
+            gap: 0.8rem;
+            z-index: 20;
+        }
+
+        .indicator {
+            width: 40px;
+            height: 2px;
+            background: rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .indicator::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .indicator.active::after {
+            width: 100%;
+            animation: progress 5s linear;
+        }
+
+        @keyframes progress {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        .indicator.active {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Info Section */
+        .info-section {
+            padding: 6rem 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .section-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.15em;
+            margin-bottom: 1.5rem;
+            color: var(--accent);
+        }
+
+        .section-text {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            font-weight: 300;
+            opacity: 0.8;
+            letter-spacing: 0.02em;
+        }
+
+        .cta-button {
+            margin-top: 3rem;
+            padding: 1rem 3rem;
+            background: transparent;
+            color: var(--accent);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--accent);
+            transition: left 0.4s ease;
+            z-index: -1;
+        }
+
+        .cta-button:hover {
+            color: var(--dark);
+        }
+
+        .cta-button:hover::before {
+            left: 0;
+        }
+
+        /* Decorative Elements */
+        .grain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        @media (max-width: 768px) {
+            .carousel {
+                height: 50vh;
+            }
+            
+            .slide-content {
+                padding: 1.5rem;
+            }
+            
+            .slide-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+      <nav>
+    <a class="nav-logo" href="#">Kiminoyawa</a>
+    <ul class="nav-links">
+      <li><a href="#">Exhibitions</a></li>
+      <li><a href="artists.html">Artists</a></li>
+      <li><a href="#">Visit</a></li>
+      <li><a href="#">About</a></li>
+    </ul>
+  </nav>
+    <div class="grain"></div>
+    
+    <section class="hero">
+        <div class="logo-container">
+            <h1 class="logo">KIMINOYAWA</h1>
+            <p class="tagline">Where Art Meets Serenity</p>
+        </div>
+
+        <div class="carousel-wrapper">
+            <div class="carousel">
+                <!-- Slide 1 -->
+                <div class="carousel-slide active">
+                    <img src="images/3.jpg" alt="Contemporary Exhibition Space">
+                    <div class="slide-content">
+                        <h3 class="slide-title">The Concrete Void</h3>
+                        <p class="slide-desc">Industrial elegance meets artistic expression</p>
+                    </div>
+                </div>
+
+                <!-- Slide 2 -->
+                <div class="carousel-slide">
+                    <img src="images/1.jpg" alt="Modern Gallery Hall">
+                    <div class="slide-content">
+                        <h3 class="slide-title">Monochrome Hall</h3>
+                        <p class="slide-desc">Photography and light installations</p>
+                    </div>
+                </div>
+
+                <!-- Slide 3 -->
+                <div class="carousel-slide">
+                    <img src="images/2.jpg" alt="Design Gallery Space">
+                    <div class="slide-content">
+                        <h3 class="slide-title">The Atelier</h3>
+                        <p class="slide-desc">Sculpture and contemporary design</p>
+                    </div>
+                </div>
+
+                <!-- Slide 4 -->
+                <div class="carousel-slide">
+                    <img src="images/4.jpg" alt="Futuristic Gallery">
+                    <div class="slide-content">
+                        <h3 class="slide-title">White Canvas</h3>
+                        <p class="slide-desc">Minimalist purity for bold visions</p>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="carousel-nav">
+                    <button class="nav-btn prev" onclick="changeSlide(-1)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <button class="nav-btn next" onclick="changeSlide(1)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Indicators -->
+                <div class="indicators">
+                    <div class="indicator active" onclick="goToSlide(0)"></div>
+                    <div class="indicator" onclick="goToSlide(1)"></div>
+                    <div class="indicator" onclick="goToSlide(2)"></div>
+                    <div class="indicator" onclick="goToSlide(3)"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="info-section">
+        <h2 class="section-title">Experience the Extraordinary</h2>
+        <p class="section-text">
+            Kiminoyawa (君の夜和) — "Your Evening Harmony" — is a sanctuary where contemporary art 
+            transcends boundaries. Our curated spaces invite contemplation, dialogue, and 
+            transformation through carefully selected exhibitions that bridge Eastern aesthetics 
+            with global perspectives.
+        </p>
+        <button class="cta-button" >ENTER GALLERY</button>
+    </section>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.carousel-slide');
+        const indicators = document.querySelectorAll('.indicator');
+        let autoPlayInterval;
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active');
+                indicators[i].classList.remove('active');
+            });
+            
+            slides[index].classList.add('active');
+            indicators[index].classList.add('active');
+            currentSlide = index;
+        }
+
+        function changeSlide(direction) {
+            let newSlide = currentSlide + direction;
+            if (newSlide >= slides.length) newSlide = 0;
+            if (newSlide < 0) newSlide = slides.length - 1;
+            showSlide(newSlide);
+            resetAutoPlay();
+        }
+
+        function goToSlide(index) {
+            showSlide(index);
+            resetAutoPlay();
+        }
+
+        function nextSlide() {
+            changeSlide(1);
+        }
+
+        function resetAutoPlay() {
+            clearInterval(autoPlayInterval);
+            autoPlayInterval = setInterval(nextSlide, 5000);
+        }
+
+        // Initialize autoplay
+        resetAutoPlay();
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        });
+
+        // Touch support
+        let touchStartX = 0;
+        const carousel = document.querySelector('.carousel');
+
+        carousel.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        carousel.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].screenX;
+            if (touchStartX - touchEndX > 50) changeSlide(1);
+            if (touchEndX - touchStartX > 50) changeSlide(-1);
+        });
+    </script>
+</body>
+</html>
