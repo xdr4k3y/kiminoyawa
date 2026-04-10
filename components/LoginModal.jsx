@@ -3,40 +3,21 @@
 import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 
-const providers = [
-  "Continue with Gallery email",
-  "Continue with Apple",
-  "Continue with Google",
-  "Continue with Facebook",
-  "Continue with Microsoft",
-  "Continue with email",
-  "Continue with work email",
-];
-
-function providerGlyph(label) {
-  if (label.includes("Apple")) return "A";
-  if (label.includes("Google")) return "G";
-  if (label.includes("Facebook")) return "F";
-  if (label.includes("Microsoft")) return "M";
-  if (label.includes("work")) return "W";
-  if (label.includes("email")) return "@";
-  return "K";
-}
-
 export default function LoginModal() {
   const [isOpen, setIsOpen] = useState(false);
-  const [view, setView] = useState("welcome");
-
-  const handleGoogleSignIn = () => {
-    const callbackUrl =
-      typeof window !== "undefined" ? window.location.href : "/";
-    setIsOpen(false);
-    signIn("google", { callbackUrl });
-  };
+  const [mode, setMode] = useState("signin");
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [remember, setRemember] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const openLogin = () => {
-      setView("welcome");
+      setMode("signin");
+      setError("");
       setIsOpen(true);
     };
     const closeOnEscape = (event) => {
@@ -52,6 +33,83 @@ export default function LoginModal() {
     };
   }, []);
 
+  const closeModal = () => setIsOpen(false);
+
+  const handleSignIn = async (event) => {
+    event.preventDefault();
+    setError("");
+    setIsLoading(true);
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+      callbackUrl: "/profile",
+    });
+    setIsLoading(false);
+
+    if (!result?.ok) {
+      setError("Invalid email or password.");
+      return;
+    }
+
+    setIsOpen(false);
+    window.location.href = result.url || "/profile";
+  };
+
+  const handleSignUp = async (event) => {
+    event.preventDefault();
+    setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ displayName, email, password }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        setError(payload?.error || "Failed to create account.");
+        setIsLoading(false);
+        return;
+      }
+
+      const login = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+        callbackUrl: "/profile",
+      });
+      setIsLoading(false);
+      if (!login?.ok) {
+        setError("Account created. Please sign in.");
+        setMode("signin");
+        return;
+      }
+
+      setIsOpen(false);
+      window.location.href = login.url || "/profile";
+    } catch {
+      setIsLoading(false);
+      setError("Failed to create account.");
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    closeModal();
+    const callbackUrl = typeof window !== "undefined" ? window.location.href : "/";
+    await signIn("google", { callbackUrl });
+  };
+
   return (
     <div
       className={`fixed inset-0 z-[130] transition ${
@@ -63,7 +121,7 @@ export default function LoginModal() {
         className={`absolute inset-0 bg-black/65 backdrop-blur-sm transition ${
           isOpen ? "opacity-100" : "opacity-0"
         }`}
-        onClick={() => setIsOpen(false)}
+        onClick={closeModal}
         aria-label="Close login modal"
       />
 
@@ -76,7 +134,7 @@ export default function LoginModal() {
         }`}
       >
         <button
-          onClick={() => setIsOpen(false)}
+          onClick={closeModal}
           className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/35 text-xl text-[#f5f5f0]/85 transition hover:border-[#c9a962] hover:text-[#c9a962]"
           aria-label="Close login modal"
         >
@@ -84,93 +142,169 @@ export default function LoginModal() {
         </button>
 
         <div className="relative hidden md:block md:w-[52%]">
-          <div className="relative h-full w-full overflow-hidden">
-            <img
-              src="/images/2.jpg"
-              alt="Gallery visitor preview"
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-black/40" />
-            <div className="absolute bottom-6 left-6 right-6">
-              <p className="font-cormorant text-3xl font-light tracking-[0.08em] text-[#f5f5f0]">
-                Evening Access
-              </p>
-              <p className="mt-2 text-xs tracking-[0.12em] text-[#f5f5f0]/80">
-                Save favorites, view collections, and checkout smoothly.
-              </p>
-            </div>
+          <img
+            src="/images/2.jpg"
+            alt="Gallery visitor preview"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/15 to-black/45" />
+          <div className="absolute left-6 top-6 flex h-12 w-12 items-center justify-center rounded-md border border-[#c9a962]/70 bg-black/35">
+            <span className="font-cormorant text-2xl font-semibold text-white">K</span>
+          </div>
+          <div className="absolute bottom-6 left-6 right-6">
+            <p className="font-cormorant text-3xl font-light tracking-[0.08em] text-[#f5f5f0]">
+              Evening Access
+            </p>
+            <p className="mt-2 text-xs tracking-[0.12em] text-[#f5f5f0]/80">
+              Save favorites, view collections, and checkout smoothly.
+            </p>
           </div>
         </div>
 
-        <div
-          className={`flex w-full flex-col px-5 pb-6 pt-7 md:w-[48%] md:px-9 md:pb-8 md:pt-10 ${
-            view === "welcome"
-              ? "bg-[rgba(16,16,16,0.45)] text-[#f5f5f0] backdrop-blur-2xl"
-              : "bg-[rgba(16,16,16,0.45)] text-[#f5f5f0] backdrop-blur-2xl"
-          }`}
-        >
-          {view === "welcome" ? (
-            <>
-              <h2 className="pr-10 font-cormorant text-[clamp(1.9rem,4.3vw,2.5rem)] font-light leading-tight tracking-[0.03em]">
-                Welcome back!
-              </h2>
-              <p className="mt-6 text-[0.95rem] leading-7 text-[#f5f5f0]/75">
-                Last time you used Google to log in.
-              </p>
+        <div className="flex w-full flex-col bg-[#0b0b10] px-5 pb-6 pt-8 text-[#f5f5f0] md:w-[48%] md:px-9">
+          <h2 className="font-inter text-[clamp(1.35rem,2.4vw,1.7rem)] font-semibold leading-tight text-[#f5f5f0]">
+            {mode === "signin" ? "Welcome to Kiminoyawa" : "Create account"}
+          </h2>
+          {mode === "signin" ? (
+            <p className="mt-1 text-[0.82rem] font-medium tracking-normal text-[#f5f5f0]/55">
+              Where your art journey begins.
+            </p>
+          ) : null}
 
-              <div className="mt-7 mx-auto flex w-full max-w-[430px] flex-col items-center">
-                <button
-                  onClick={handleGoogleSignIn}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg border border-[#c9a962]/45 bg-[rgba(255,255,255,0.04)] px-4 py-3 text-base font-medium text-[#f5f5f0] shadow-[inset_0_1px_0_rgba(255,255,255,0.09)] transition hover:border-[#c9a962] hover:bg-[rgba(255,255,255,0.07)]"
-                >
-                  <span className="text-3xl leading-none text-[#4285F4]">G</span>
-                  Continue with Google
-                </button>
+          <form
+            className="mt-6 space-y-3"
+            onSubmit={mode === "signin" ? handleSignIn : handleSignUp}
+          >
+            {mode === "signup" ? (
+              <label className="block">
+                <span className="text-xs text-[#f5f5f0]/70">Name</span>
+                <input
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-[#f5f5f0] outline-none focus:border-[#c9a962]"
+                  placeholder="Your name"
+                />
+              </label>
+            ) : null}
 
-                <button
-                  onClick={() => setView("options")}
-                  className="mt-5 w-full text-center text-[1.05rem] font-medium tracking-normal text-[#f5f5f0] transition hover:text-[#c9a962]"
-                >
-                  Continue another way
-                </button>
-              </div>
+            <label className="block">
+              <span className="text-xs text-[#f5f5f0]/70">Email</span>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-[#f5f5f0] outline-none focus:border-[#c9a962]"
+                placeholder="alex.jordan@gmail.com"
+              />
+            </label>
 
-              <p className="mt-8 text-base leading-7 text-[#f5f5f0]/65">
-                By continuing, you agree to Kiminoyawa Terms of Use and Privacy
-                Policy.
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 className="pr-10 font-cormorant text-[clamp(1.7rem,4.4vw,2.35rem)] font-light tracking-[0.05em] text-[#f5f5f0]">
-                Continue to Kiminoyawa
-              </h2>
+            <label className="block">
+              <span className="text-xs text-[#f5f5f0]/70">Password</span>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-[#f5f5f0] outline-none focus:border-[#c9a962]"
+                placeholder="******"
+              />
+            </label>
 
-              <div className="mt-6 flex-1 space-y-3 overflow-y-auto pr-1">
-                {providers.map((provider) => (
-                  <button
-                    key={provider}
-                    onClick={() => {
-                      if (provider.includes("Google")) handleGoogleSignIn();
-                    }}
-                    className="flex w-full items-center gap-4 rounded-lg border border-white/20 bg-[rgba(255,255,255,0.03)] px-4 py-3 text-left text-[0.95rem] text-[#f5f5f0]/92 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:border-[#c9a962] hover:bg-[#c9a962]/10"
-                  >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/25 text-xs font-semibold text-[#c9a962]">
-                      {providerGlyph(provider)}
-                    </span>
-                    <span className="leading-6">{provider}</span>
-                  </button>
-                ))}
-              </div>
-
+            {mode === "signup" ? (
+              <label className="block">
+                <span className="text-xs text-[#f5f5f0]/70">Confirm Password</span>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-[#f5f5f0] outline-none focus:border-[#c9a962]"
+                  placeholder="******"
+                />
+              </label>
+            ) : (
               <button
-                onClick={() => setView("welcome")}
-                className="mt-5 text-left text-sm leading-6 text-[#c9a962] transition hover:text-[#f5f5f0]"
+                type="button"
+                className="text-left text-sm text-[#c9a962] transition hover:text-[#e0c487]"
               >
-                Back to quick sign in
+                Forgot password?
               </button>
-            </>
-          )}
+            )}
+
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-sm text-[#f5f5f0]/70">Remember sign in details</span>
+              <button
+                type="button"
+                onClick={() => setRemember((prev) => !prev)}
+                aria-pressed={remember}
+                className={`relative h-7 w-12 rounded-full transition ${
+                  remember ? "bg-[#c9a962]" : "bg-white/20"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+                    remember ? "left-6" : "left-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {error ? (
+              <p className="rounded-lg border border-[#c94b4b]/50 bg-[#c94b4b]/20 px-3 py-2 text-sm text-[#ffd4d4]">
+                {error}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="mt-2 w-full rounded-full bg-[linear-gradient(135deg,#c9a962,#b8944d)] px-4 py-3 text-sm font-medium text-[#0d0d0d] transition hover:brightness-110 disabled:opacity-70"
+            >
+              {isLoading ? "Please wait..." : mode === "signin" ? "Log in" : "Register"}
+            </button>
+          </form>
+
+          <div className="my-4 flex items-center gap-3 text-xs text-[#f5f5f0]/45">
+            <div className="h-px flex-1 bg-white/15" />
+            <span>OR</span>
+            <div className="h-px flex-1 bg-white/15" />
+          </div>
+
+          <button
+            onClick={handleGoogleSignIn}
+            className="flex items-center justify-center gap-3 rounded-full border border-white/15 bg-white/5 px-4 py-3 text-sm text-[#f5f5f0] transition hover:border-[#c9a962]/70"
+          >
+            <span className="text-xl font-bold text-[#4285F4]">G</span>
+            Continue with Google
+          </button>
+
+          <button
+            onClick={async () => {
+              setIsOpen(false);
+              await signIn("credentials", {
+                email: "demo",
+                password: "demo123",
+                callbackUrl: "/profile",
+              });
+            }}
+            className="mt-3 text-sm text-[#c9a962] transition hover:text-[#f5f5f0]"
+          >
+            Use demo account
+          </button>
+
+          <p className="mt-5 text-center text-sm text-[#f5f5f0]/55">
+            {mode === "signin" ? "Don't have an account?" : "Already have an account?"}{" "}
+            <button
+              onClick={() => {
+                setMode((prev) => (prev === "signin" ? "signup" : "signin"));
+                setError("");
+              }}
+              className="font-medium text-[#c9a962] transition hover:text-[#e0c487]"
+            >
+              {mode === "signin" ? "Sign up" : "Sign in"}
+            </button>
+          </p>
         </div>
       </section>
     </div>

@@ -10,6 +10,7 @@ export default function ExhibitionsPage() {
   const [selectedArtist, setSelectedArtist] = useState("All");
   const [loveCounts, setLoveCounts] = useState({});
   const [lovedItems, setLovedItems] = useState({});
+  const [useAccountFavorites, setUseAccountFavorites] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,19 +36,55 @@ export default function ExhibitionsPage() {
   }, []);
 
   useEffect(() => {
-    try {
-      const storedCounts = JSON.parse(
-        localStorage.getItem("kiminoyawa-love-counts") || "{}",
-      );
-      const storedLoved = JSON.parse(
-        localStorage.getItem("kiminoyawa-loved-items") || "{}",
-      );
-      setLoveCounts(storedCounts && typeof storedCounts === "object" ? storedCounts : {});
-      setLovedItems(storedLoved && typeof storedLoved === "object" ? storedLoved : {});
-    } catch {
-      setLoveCounts({});
-      setLovedItems({});
+    let cancelled = false;
+
+    async function loadFavorites() {
+      try {
+        const response = await fetch("/api/me/favorites", { cache: "no-store" });
+        if (response.status === 401) {
+          throw new Error("Not authenticated");
+        }
+        const payload = await response.json();
+        const map = {};
+        for (const item of payload?.data || []) {
+          map[item.slug] = true;
+        }
+        if (!cancelled) {
+          setUseAccountFavorites(true);
+          setLovedItems(map);
+          setLoveCounts({});
+        }
+      } catch {
+        try {
+          const storedCounts = JSON.parse(
+            localStorage.getItem("kiminoyawa-love-counts") || "{}",
+          );
+          const storedLoved = JSON.parse(
+            localStorage.getItem("kiminoyawa-loved-items") || "{}",
+          );
+          if (!cancelled) {
+            setUseAccountFavorites(false);
+            setLoveCounts(
+              storedCounts && typeof storedCounts === "object" ? storedCounts : {},
+            );
+            setLovedItems(
+              storedLoved && typeof storedLoved === "object" ? storedLoved : {},
+            );
+          }
+        } catch {
+          if (!cancelled) {
+            setUseAccountFavorites(false);
+            setLoveCounts({});
+            setLovedItems({});
+          }
+        }
+      }
     }
+
+    loadFavorites();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const exhibitionArtists = [
@@ -55,7 +92,7 @@ export default function ExhibitionsPage() {
     ...new Set(artworks.map((work) => work.artist).filter(Boolean)),
   ];
 
-  const toggleLove = (event, slug) => {
+  const toggleLove = async (event, slug) => {
     event.preventDefault();
     event.stopPropagation();
 
@@ -70,6 +107,15 @@ export default function ExhibitionsPage() {
 
     setLovedItems(nextLoved);
     setLoveCounts(nextCounts);
+
+    if (useAccountFavorites) {
+      try {
+        await fetch(`/api/me/favorites/${slug}`, {
+          method: isLoved ? "DELETE" : "PUT",
+        });
+      } catch {}
+      return;
+    }
 
     localStorage.setItem("kiminoyawa-loved-items", JSON.stringify(nextLoved));
     localStorage.setItem("kiminoyawa-love-counts", JSON.stringify(nextCounts));
@@ -139,7 +185,7 @@ export default function ExhibitionsPage() {
                         : "border-white/20 bg-black/35 text-[#f5f5f0]/90 hover:border-[#c9a962] hover:text-[#c9a962]"
                     }`}
                   >
-                    <span>{lovedItems[work.slug] ? "♥" : "♡"}</span>
+                    <span>{lovedItems[work.slug] ? "\u2665" : "\u2661"}</span>
                   </button>
                   <img
                     src={work.image}
