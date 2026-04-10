@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { fetchCart } from "@/lib/cart-client";
 
 const links = [
   { href: "/exhibitions", label: "Exhibitions" },
   { href: "/artists", label: "Artists" },
-  { href: "#", label: "Visit" },
-  { href: "#", label: "About" },
+  { href: "/visit", label: "Visit" },
+  { href: "/about", label: "About" },
 ];
 
 export default function GalleryNav() {
@@ -16,13 +17,15 @@ export default function GalleryNav() {
   const [isOpen, setIsOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
 
+  const openLoginModal = () => {
+    window.dispatchEvent(new Event("login-open"));
+  };
+
   useEffect(() => {
-    const getCount = () => {
+    const getCount = async () => {
       try {
-        const parsedCart = JSON.parse(
-          localStorage.getItem("kiminoyawa-cart") || "[]",
-        );
-        const total = parsedCart.reduce(
+        const items = await fetchCart();
+        const total = items.reduce(
           (sum, item) => sum + (item.quantity || 1),
           0,
         );
@@ -33,11 +36,9 @@ export default function GalleryNav() {
     };
 
     getCount();
-    window.addEventListener("storage", getCount);
     window.addEventListener("cart-updated", getCount);
 
     return () => {
-      window.removeEventListener("storage", getCount);
       window.removeEventListener("cart-updated", getCount);
     };
   }, []);
@@ -79,10 +80,11 @@ export default function GalleryNav() {
               </span>
             )}
           </Link>
-          <Link
-            href="/profile"
+          <button
+            type="button"
+            onClick={openLoginModal}
             className="relative flex h-10 w-10 items-center justify-center text-[#f5f5f0] transition hover:text-[#c9a962]"
-            aria-label="Open profile"
+            aria-label="Open login modal"
           >
             <svg
               viewBox="0 0 24 24"
@@ -94,7 +96,7 @@ export default function GalleryNav() {
               <circle cx="12" cy="8" r="3.2" />
               <path d="M5 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5" />
             </svg>
-          </Link>
+          </button>
 
           <button
             type="button"
@@ -166,10 +168,11 @@ export default function GalleryNav() {
             </Link>
           </li>
           <li>
-            <Link
-              href="/profile"
+            <button
+              type="button"
+              onClick={openLoginModal}
               className="relative flex items-center text-[#f5f5f0]/80 transition hover:text-[#c9a962]"
-              aria-label="Open profile"
+              aria-label="Open login modal"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -181,7 +184,7 @@ export default function GalleryNav() {
                 <circle cx="12" cy="8" r="3.2" />
                 <path d="M5 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5" />
               </svg>
-            </Link>
+            </button>
           </li>
         </ul>
       </div>
@@ -191,21 +194,24 @@ export default function GalleryNav() {
           isOpen ? "max-h-72 py-4 opacity-100" : "max-h-0 py-0 opacity-0"
         }`}
       >
-        <ul className="list-none space-y-4 font-cormorant">
+        <ul className="list-none space-y-3">
           <li>
-            <Link
-              href="/profile"
-              onClick={() => setIsOpen(false)}
-              className="block text-xs uppercase tracking-[0.15em] text-[#f5f5f0]/80 transition hover:text-[#c9a962]"
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                openLoginModal();
+              }}
+              className="block text-sm text-[#f5f5f0]/85 transition hover:text-[#c9a962]"
             >
-              Profile
-            </Link>
+              Sign Up / Login
+            </button>
           </li>
           <li>
             <Link
               href="/cart"
               onClick={() => setIsOpen(false)}
-              className="block text-xs uppercase tracking-[0.15em] text-[#f5f5f0]/80 transition hover:text-[#c9a962]"
+              className="block text-sm text-[#f5f5f0]/85 transition hover:text-[#c9a962]"
             >
               Cart {cartCount > 0 ? `(${cartCount})` : ""}
             </Link>
@@ -217,10 +223,10 @@ export default function GalleryNav() {
                 <Link
                   href={link.href}
                   onClick={() => setIsOpen(false)}
-                  className={`block text-xs uppercase tracking-[0.15em] transition-colors ${
+                  className={`block text-sm transition-colors ${
                     isActive
                       ? "text-[#c9a962]"
-                      : "text-[#f5f5f0]/80 hover:text-[#c9a962]"
+                      : "text-[#f5f5f0]/85 hover:text-[#c9a962]"
                   }`}
                 >
                   {link.label}

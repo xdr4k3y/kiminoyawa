@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import GalleryNav from "@/components/GalleryNav";
 import GrainOverlay from "@/components/GrainOverlay";
 
@@ -34,6 +36,8 @@ const slides = [
 
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isEntering, setIsEntering] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -61,13 +65,25 @@ export default function HomePage() {
   const prevSlide = () =>
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
+  const handleEnterGallery = (event) => {
+    event.preventDefault();
+    if (isEntering) return;
+    setIsEntering(true);
+    setTimeout(() => {
+      router.push("/exhibitions");
+    }, 220);
+  };
+
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
+    <main className="page-enter min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
       <GalleryNav />
       <GrainOverlay />
 
       <section className="hero-pattern relative flex flex-col items-center bg-[linear-gradient(135deg,#0d0d0d_0%,#1a1a1a_100%)] pt-28">
         <div className="relative z-10 mb-0 text-center">
+          <p className="mb-2 font-cormorant text-[clamp(0.7rem,2vw,0.95rem)] font-light tracking-[0.45em] text-[#c9a962]/90">
+            君の夜和
+          </p>
           <h1 className="font-cormorant text-[clamp(2.2rem,9vw,4.8rem)] font-light tracking-[0.2em] sm:tracking-[0.28em]">
             KIMINOYAWA
           </h1>
@@ -78,7 +94,7 @@ export default function HomePage() {
 
         <div className="relative z-10 mt-6 w-full">
           <div
-            className="relative h-[48vh] min-h-[320px] overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.6)] md:h-[56vh]"
+            className="group relative h-[48vh] min-h-[320px] overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.6)] md:h-[56vh]"
             onTouchStart={(event) => {
               event.currentTarget.dataset.touchStartX = String(
                 event.changedTouches[0].screenX,
@@ -128,14 +144,14 @@ export default function HomePage() {
 
             <button
               onClick={prevSlide}
-              className="absolute left-4 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-lg text-white/90 transition hover:scale-110 hover:text-white md:left-6"
+              className="absolute left-4 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-lg text-white/95 shadow-lg backdrop-blur-sm transition hover:scale-110 hover:bg-black/65 hover:text-white md:left-6 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
               aria-label="Previous slide"
             >
               {"<"}
             </button>
             <button
               onClick={nextSlide}
-              className="absolute right-4 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center text-lg text-white/90 transition hover:scale-110 hover:text-white md:right-6"
+              className="absolute right-4 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-lg text-white/95 shadow-lg backdrop-blur-sm transition hover:scale-110 hover:bg-black/65 hover:text-white md:right-6 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
               aria-label="Next slide"
             >
               {">"}
@@ -169,9 +185,17 @@ export default function HomePage() {
           Our curated spaces invite contemplation and transformation through
           exhibitions that bridge Eastern aesthetics with global perspectives.
         </p>
-        <button className="mt-12 border border-[#c9a962] px-10 py-4 text-[clamp(0.68rem,2.2vw,0.88rem)] tracking-[0.18em] sm:tracking-[0.2em] text-[#c9a962] transition hover:bg-[#c9a962] hover:text-[#0d0d0d]">
+        <Link
+          href="/exhibitions"
+          onClick={handleEnterGallery}
+          className={`mt-12 inline-flex cursor-pointer border border-[#c9a962] px-10 py-4 text-[clamp(0.68rem,2.2vw,0.88rem)] tracking-[0.18em] sm:tracking-[0.2em] text-[#c9a962] transition-all duration-300 ease-out md:hover:-translate-y-1 md:hover:scale-[1.03] md:hover:border-[#e4c981] md:hover:bg-[#c9a962] md:hover:text-[#0d0d0d] md:hover:shadow-[0_14px_34px_rgba(201,169,98,0.35)] active:translate-y-0 active:scale-[0.99] active:border-[#c9a962] active:bg-[#c9a962] active:text-[#0d0d0d] ${
+            isEntering
+              ? "scale-[0.98] bg-[#c9a962] text-[#0d0d0d] shadow-[0_16px_38px_rgba(201,169,98,0.42)]"
+              : ""
+          }`}
+        >
           ENTER GALLERY
-        </button>
+        </Link>
       </section>
     </main>
   );

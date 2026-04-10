@@ -2,15 +2,45 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import GalleryNav from "@/components/GalleryNav";
 import GrainOverlay from "@/components/GrainOverlay";
-import { artists, getArtistBySlug } from "@/data/artists";
+import { createSupabaseServerClient } from "@/lib/supabase";
 
-export function generateStaticParams() {
-  return artists.map((artist) => ({ slug: artist.slug }));
+async function getArtistBySlug(slug) {
+  const supabase = createSupabaseServerClient();
+  const { data: artist, error: artistError } = await supabase
+    .from("artists")
+    .select("id, slug, name, specialty, bio, image_url, location, statement")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (artistError || !artist) {
+    return null;
+  }
+
+  const { data: works } = await supabase
+    .from("artist_works")
+    .select("title, year, medium")
+    .eq("artist_id", artist.id)
+    .order("year", { ascending: false });
+
+  return {
+    slug: artist.slug,
+    name: artist.name,
+    specialty: artist.specialty,
+    bio: artist.bio,
+    image: artist.image_url,
+    location: artist.location,
+    statement: artist.statement,
+    works: (works || []).map((work) => ({
+      title: work.title,
+      year: String(work.year),
+      medium: work.medium,
+    })),
+  };
 }
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const artist = getArtistBySlug(slug);
+  const artist = await getArtistBySlug(slug);
   if (!artist) {
     return {
       title: "Artist Not Found | Kiminoyawa Gallery",
@@ -25,14 +55,14 @@ export async function generateMetadata({ params }) {
 
 export default async function ArtistProfilePage({ params }) {
   const { slug } = await params;
-  const artist = getArtistBySlug(slug);
+  const artist = await getArtistBySlug(slug);
 
   if (!artist) {
     notFound();
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
+    <main className="page-enter min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
       <GalleryNav />
       <GrainOverlay />
 

@@ -2,18 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  fetchCart,
+  addCartItem,
+  setCartItemQuantity,
+  removeCartItem as removeCartItemBySlug,
+} from "@/lib/cart-client";
 
-const CART_KEY = "kiminoyawa-cart";
 const TAX_RATE = 0.08;
-
-function readCart() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 export default function CartDrawer() {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,13 +22,20 @@ export default function CartDrawer() {
   const taxes = useMemo(() => subtotal * TAX_RATE, [subtotal]);
   const total = useMemo(() => subtotal + taxes, [subtotal, taxes]);
 
-  const syncCart = () => setItems(readCart());
+  const syncCart = async () => {
+    try {
+      const nextItems = await fetchCart();
+      setItems(nextItems);
+    } catch {
+      setItems([]);
+    }
+  };
 
   useEffect(() => {
     syncCart();
 
-    const handleOpen = () => {
-      syncCart();
+    const handleOpen = async () => {
+      await syncCart();
       setIsOpen(true);
     };
 
@@ -42,43 +45,38 @@ export default function CartDrawer() {
 
     window.addEventListener("cart-open", handleOpen);
     window.addEventListener("cart-updated", syncCart);
-    window.addEventListener("storage", syncCart);
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
       window.removeEventListener("cart-open", handleOpen);
       window.removeEventListener("cart-updated", syncCart);
-      window.removeEventListener("storage", syncCart);
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
-
-  const writeCart = (nextItems) => {
-    localStorage.setItem(CART_KEY, JSON.stringify(nextItems));
-    setItems(nextItems);
-    window.dispatchEvent(new Event("cart-updated"));
+  const increaseQty = async (slug) => {
+    try {
+      const nextItems = await addCartItem(slug, 1);
+      setItems(nextItems);
+      window.dispatchEvent(new Event("cart-updated"));
+    } catch {}
   };
 
-  const increaseQty = (slug) => {
-    const nextItems = items.map((item) =>
-      item.slug === slug ? { ...item, quantity: (item.quantity || 1) + 1 } : item,
-    );
-    writeCart(nextItems);
+  const decreaseQty = async (slug) => {
+    const item = items.find((entry) => entry.slug === slug);
+    const nextQuantity = Math.max((item?.quantity || 1) - 1, 0);
+    try {
+      const nextItems = await setCartItemQuantity(slug, nextQuantity);
+      setItems(nextItems);
+      window.dispatchEvent(new Event("cart-updated"));
+    } catch {}
   };
 
-  const decreaseQty = (slug) => {
-    const nextItems = items
-      .map((item) =>
-        item.slug === slug
-          ? { ...item, quantity: Math.max((item.quantity || 1) - 1, 0) }
-          : item,
-      )
-      .filter((item) => (item.quantity || 0) > 0);
-    writeCart(nextItems);
-  };
-
-  const removeItem = (slug) => {
-    writeCart(items.filter((item) => item.slug !== slug));
+  const removeItem = async (slug) => {
+    try {
+      const nextItems = await removeCartItemBySlug(slug);
+      setItems(nextItems);
+      window.dispatchEvent(new Event("cart-updated"));
+    } catch {}
   };
 
   return (

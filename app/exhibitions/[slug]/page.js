@@ -3,15 +3,43 @@ import { notFound } from "next/navigation";
 import GalleryNav from "@/components/GalleryNav";
 import GrainOverlay from "@/components/GrainOverlay";
 import AddToCartButton from "@/components/AddToCartButton";
-import { artworks, getArtworkBySlug } from "@/data/artworks";
+import { createSupabaseServerClient } from "@/lib/supabase";
 
-export function generateStaticParams() {
-  return artworks.map((artwork) => ({ slug: artwork.slug }));
+async function getArtworkBySlug(slug) {
+  const supabase = createSupabaseServerClient();
+  const { data: artwork, error } = await supabase
+    .from("artworks")
+    .select(
+      "slug, title, medium, year, image_url, dimensions, price, summary, details, artists(name)",
+    )
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error || !artwork) {
+    return null;
+  }
+
+  const artist = Array.isArray(artwork.artists)
+    ? artwork.artists[0]
+    : artwork.artists;
+
+  return {
+    slug: artwork.slug,
+    title: artwork.title,
+    artist: artist?.name || "",
+    medium: artwork.medium,
+    year: String(artwork.year),
+    image: artwork.image_url,
+    dimensions: artwork.dimensions,
+    price: Number(artwork.price),
+    summary: artwork.summary,
+    details: artwork.details,
+  };
 }
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const artwork = getArtworkBySlug(slug);
+  const artwork = await getArtworkBySlug(slug);
 
   if (!artwork) {
     return { title: "Artwork Not Found | Kiminoyawa Gallery" };
@@ -25,14 +53,14 @@ export async function generateMetadata({ params }) {
 
 export default async function ExhibitionArtworkPage({ params }) {
   const { slug } = await params;
-  const artwork = getArtworkBySlug(slug);
+  const artwork = await getArtworkBySlug(slug);
 
   if (!artwork) {
     notFound();
   }
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
+    <main className="page-enter min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
       <GalleryNav />
       <GrainOverlay />
 
@@ -65,8 +93,8 @@ export default async function ExhibitionArtworkPage({ params }) {
               <p className="mt-4 text-sm uppercase tracking-[0.2em] text-[#f5f5f0]/60">
                 {artwork.dimensions}
               </p>
-              <p className="mt-6 font-cormorant text-4xl font-light tracking-[0.08em] text-[#c9a962]">
-                ${artwork.price.toLocaleString()}
+              <p className="mt-6 text-base font-medium tracking-normal text-[#f5f5f0]">
+                Price: ${artwork.price.toLocaleString()}
               </p>
               <div className="mt-8">
                 <AddToCartButton
@@ -85,7 +113,34 @@ export default async function ExhibitionArtworkPage({ params }) {
       </section>
 
       <section className="px-6 pb-20 pt-10 md:px-10">
-        <div className="mx-auto grid max-w-7xl gap-8 md:grid-cols-2">
+        <div className="mx-auto max-w-7xl">
+          <article className="mb-8 border border-white/10 bg-white/[0.02] p-8">
+            <h2 className="font-cormorant text-4xl font-light tracking-[0.08em] text-[#c9a962]">
+              Preview In Room
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-[#f5f5f0]/75">
+              This mockup gives a quick look at how the artwork can appear in a
+              real interior before purchase.
+            </p>
+            <div className="mt-6 overflow-hidden border border-white/15 bg-black/30 p-3">
+              <div className="relative mx-auto max-w-5xl">
+                <img
+                  src="/images/mockup.jpg"
+                  alt="Interior wall mockup"
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute left-[30%] top-[25%] w-[39%] border-4 border-[#2a2a2a] bg-[#111] p-2 shadow-[0_20px_45px_rgba(0,0,0,0.55)] md:left-[33%] md:top-[23%] md:w-[33%]">
+                  <img
+                    src={artwork.image}
+                    alt={`${artwork.title} room preview`}
+                    className="aspect-[4/5] h-full w-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <div className="grid gap-8 md:grid-cols-2">
           <article className="border border-white/10 bg-white/[0.02] p-8">
             <h2 className="font-cormorant text-4xl font-light tracking-[0.08em] text-[#c9a962]">
               Summary
@@ -102,6 +157,7 @@ export default async function ExhibitionArtworkPage({ params }) {
               {artwork.details}
             </p>
           </article>
+          </div>
         </div>
       </section>
     </main>

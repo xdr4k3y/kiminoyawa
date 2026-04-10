@@ -5,7 +5,7 @@ export const artworks = [
     artist: "Elena Voss",
     medium: "Oil on linen",
     year: "2025",
-    image: "/images/1.jpg",
+    image: "/images/crimsonmemory.jpg",
     dimensions: "180 x 120 cm",
     price: 5800,
     summary:
@@ -19,7 +19,7 @@ export const artworks = [
     artist: "Elena Voss",
     medium: "Mixed media",
     year: "2026",
-    image: "/images/2.jpg",
+    image: "/images/glasstide.jpg",
     dimensions: "150 x 100 cm",
     price: 6200,
     summary:
@@ -31,9 +31,9 @@ export const artworks = [
     slug: "weight-of-silence",
     title: "Weight of Silence",
     artist: "Marcus Chen",
-    medium: "Steel and stone",
+    medium: "Oil paint on canvas",
     year: "2024",
-    image: "/images/3.jpg",
+    image: "/images/weightofsilence.jpg",
     dimensions: "210 x 90 x 75 cm",
     price: 8900,
     summary:
@@ -42,16 +42,16 @@ export const artworks = [
       "Marcus Chen contrasts rough-forged steel edges with polished basalt planes to question structural trust and vulnerability.",
   },
   {
-    slug: "pulse-frame",
-    title: "Pulse Frame",
+    slug: "the-virgin",
+    title: "The Virgin",
     artist: "Marcus Chen",
-    medium: "Kinetic sculpture",
+    medium: "Ivory sculpture",
     year: "2026",
-    image: "/images/4.jpg",
+    image: "/images/thevirgin.jpg",
     dimensions: "190 x 120 x 120 cm",
     price: 9400,
     summary:
-      "A rhythmic steel structure with subtle mechanical shifts that mimic breathing.",
+      "A classical sculpture of virgin mary.",
     details:
       "The work uses a low-noise motor cycle to animate tension lines, creating a meditative loop between stillness and motion.",
   },
@@ -61,7 +61,7 @@ export const artworks = [
     artist: "Sofia Laurent",
     medium: "Silver gelatin print",
     year: "2023",
-    image: "/images/2.jpg",
+    image: "/images/cityinash.jpg",
     dimensions: "90 x 60 cm",
     price: 3200,
     summary:
@@ -89,7 +89,7 @@ export const artworks = [
     artist: "David Okonkwo",
     medium: "Digital collage",
     year: "2026",
-    image: "/images/4.jpg",
+    image: "/images/signalancestor.jpg",
     dimensions: "140 x 100 cm",
     price: 5100,
     summary:

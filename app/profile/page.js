@@ -3,7 +3,7 @@ import GrainOverlay from "@/components/GrainOverlay";
 
 export default function ProfilePage() {
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
+    <main className="page-enter min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
       <GalleryNav />
       <GrainOverlay />
 

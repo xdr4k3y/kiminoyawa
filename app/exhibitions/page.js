@@ -1,13 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import GalleryNav from "@/components/GalleryNav";
 import GrainOverlay from "@/components/GrainOverlay";
-import { artworks, exhibitionArtists } from "@/data/artworks";
 
 export default function ExhibitionsPage() {
+  const [artworks, setArtworks] = useState([]);
   const [selectedArtist, setSelectedArtist] = useState("All");
+  const [loveCounts, setLoveCounts] = useState({});
+  const [lovedItems, setLovedItems] = useState({});
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadArtworks() {
+      try {
+        const response = await fetch("/api/artworks", { cache: "no-store" });
+        const payload = await response.json();
+        if (!cancelled) {
+          setArtworks(Array.isArray(payload?.data) ? payload.data : []);
+        }
+      } catch {
+        if (!cancelled) {
+          setArtworks([]);
+        }
+      }
+    }
+
+    loadArtworks();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      const storedCounts = JSON.parse(
+        localStorage.getItem("kiminoyawa-love-counts") || "{}",
+      );
+      const storedLoved = JSON.parse(
+        localStorage.getItem("kiminoyawa-loved-items") || "{}",
+      );
+      setLoveCounts(storedCounts && typeof storedCounts === "object" ? storedCounts : {});
+      setLovedItems(storedLoved && typeof storedLoved === "object" ? storedLoved : {});
+    } catch {
+      setLoveCounts({});
+      setLovedItems({});
+    }
+  }, []);
+
+  const exhibitionArtists = [
+    "All",
+    ...new Set(artworks.map((work) => work.artist).filter(Boolean)),
+  ];
+
+  const toggleLove = (event, slug) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const isLoved = Boolean(lovedItems[slug]);
+    const currentCount = Number(loveCounts[slug] || 0);
+    const nextCount = isLoved
+      ? Math.max(0, currentCount - 1)
+      : currentCount + 1;
+
+    const nextLoved = { ...lovedItems, [slug]: !isLoved };
+    const nextCounts = { ...loveCounts, [slug]: nextCount };
+
+    setLovedItems(nextLoved);
+    setLoveCounts(nextCounts);
+
+    localStorage.setItem("kiminoyawa-loved-items", JSON.stringify(nextLoved));
+    localStorage.setItem("kiminoyawa-love-counts", JSON.stringify(nextCounts));
+  };
 
   const visibleArtworks =
     selectedArtist === "All"
@@ -15,7 +81,7 @@ export default function ExhibitionsPage() {
       : artworks.filter((work) => work.artist === selectedArtist);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
+    <main className="page-enter min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
       <GalleryNav />
       <GrainOverlay />
 
@@ -64,6 +130,17 @@ export default function ExhibitionsPage() {
                 className="group overflow-hidden border border-white/10 bg-[#111111]/70 transition duration-500 hover:-translate-y-1 hover:border-[#c9a962]/40 hover:shadow-[0_20px_60px_rgba(0,0,0,0.55)]"
               >
                 <div className="relative h-72 overflow-hidden">
+                  <button
+                    onClick={(event) => toggleLove(event, work.slug)}
+                    aria-label={`Love ${work.title}`}
+                    className={`absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border text-base backdrop-blur-sm transition ${
+                      lovedItems[work.slug]
+                        ? "border-[#c9a962] bg-[#c9a962]/20 text-[#f5f5f0]"
+                        : "border-white/20 bg-black/35 text-[#f5f5f0]/90 hover:border-[#c9a962] hover:text-[#c9a962]"
+                    }`}
+                  >
+                    <span>{lovedItems[work.slug] ? "♥" : "♡"}</span>
+                  </button>
                   <img
                     src={work.image}
                     alt={`${work.title} by ${work.artist}`}

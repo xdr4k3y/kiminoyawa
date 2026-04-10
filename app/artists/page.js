@@ -1,12 +1,36 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import GalleryNav from "@/components/GalleryNav";
 import GrainOverlay from "@/components/GrainOverlay";
-import { artists } from "@/data/artists";
 
 export default function ArtistsPage() {
+  const [artists, setArtists] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadArtists() {
+      try {
+        const response = await fetch("/api/artists", { cache: "no-store" });
+        const payload = await response.json();
+        if (!cancelled) {
+          setArtists(Array.isArray(payload?.data) ? payload.data : []);
+        }
+      } catch {
+        if (!cancelled) {
+          setArtists([]);
+        }
+      }
+    }
+
+    loadArtists();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     const elements = document.querySelectorAll("[data-reveal]");
     const observer = new IntersectionObserver(
@@ -25,15 +49,21 @@ export default function ArtistsPage() {
     elements.forEach((element) => observer.observe(element));
 
     return () => observer.disconnect();
-  }, []);
+  }, [artists.length]);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
+    <main className="page-enter min-h-screen overflow-x-hidden bg-[#0d0d0d] text-[#f5f5f0]">
       <GalleryNav />
       <GrainOverlay />
 
       <section className="hero-pattern relative flex min-h-[50vh] flex-col items-center justify-center bg-[linear-gradient(135deg,#0d0d0d_0%,#1a1a1a_100%)] pt-24">
         <div className="relative z-10 text-center">
+          <p
+            data-reveal
+            className="reveal-item mx-auto mb-6 font-cormorant text-[clamp(0.75rem,2.2vw,0.95rem)] tracking-[0.18em] text-[#c9a962]"
+          >
+            {"\u82b8\u8853\u5bb6\u305f\u3061"}
+          </p>
           <h1
             data-reveal
             className="reveal-item font-cormorant text-[clamp(2.1rem,9vw,4.2rem)] font-light tracking-[0.2em] sm:tracking-[0.3em]"

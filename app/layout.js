@@ -1,6 +1,7 @@
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import CartDrawer from "@/components/CartDrawer";
+import LoginModal from "@/components/LoginModal";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
       <body className={`${cormorant.variable} ${inter.variable}`}>
         {children}
         <CartDrawer />
+        <LoginModal />
       </body>
     </html>
   );
