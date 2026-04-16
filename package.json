@@ -21,6 +21,6 @@
     "@tailwindcss/postcss": "^4.2.2",
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.2",
-    "vercel": "^50.41.0"
+    "vercel": "^51.4.0"
   }
 }
